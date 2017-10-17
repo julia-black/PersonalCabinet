@@ -83,7 +83,8 @@ public class User {
     public boolean buyGoodById(Integer id) {
         for (int i = 0; i < cart.size() ; i++) {
             if(cart.get(i).getId() == id){
-                cart.remove(id);
+                System.out.println("Buying");
+                cart.remove(i);
                 return true;
             }
         }
@@ -103,7 +104,7 @@ public class User {
     public boolean deleteGoodById(Integer id) {
         for (int i = 0; i < cart.size() ; i++) {
             if(cart.get(i).getId() == id){
-                cart.remove(id);
+                cart.remove(i);
                 return true;
             }
         }

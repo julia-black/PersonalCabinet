@@ -2,16 +2,11 @@ package com.ssu.chernousovaya.controller;
 
 import com.ssu.chernousovaya.model.Good;
 import com.ssu.chernousovaya.model.User;
-import com.sun.net.httpserver.Authenticator;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.propertyeditors.StringArrayPropertyEditor;
-import org.springframework.context.annotation.Bean;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,33 +15,42 @@ import java.util.List;
 public class CabinetController {
 
     @Autowired
-    User currentUser;
+    List<User> currentsUsers;
 
     @Autowired
     RestTemplate restTemplate;
 
-  // @RequestMapping(value = "/getter", method = RequestMethod.GET, params = {"name"})
-  // public String method(@RequestParam("name") String name) {
-  //     String forObject = restTemplate.getForObject("http://localhost:8080/get_all_goods", String.class);
-  //     return name + " " + forObject;
-  // }
 
+    @RequestMapping(method = RequestMethod.GET, value = "/get_users")
+    public List<User> getCurrentUsers(){
+        return currentsUsers;
+    }
 
-    @RequestMapping(value = "/set_user")
+    @RequestMapping(method = RequestMethod.GET, value = "/add_current_user")
     public String setUser(Integer id, String login, String password){
-        currentUser = new User(id, login, password);
-        return "My Cabinet. Login: " + currentUser.getLogin();
+        currentsUsers.add(new User(id, login, password));
+        return "Added user in current session. Login: " + login;
     }
 
-    @RequestMapping(value = "/get_user")
-    public User getUser(){
-          return currentUser;
+    @RequestMapping(method = RequestMethod.GET, value = "/get_user_by_id")
+    public User getUserById(Integer id) {
+        for (User u: currentsUsers) {
+                if (u.getId() == id) {
+                   return u;
+                }
+        }
+        return null;
     }
 
-
-    @RequestMapping(value = "/add_to_cart_by_id")
-    public String addToCartById(Integer id){
-        if(currentUser!= null) {
+    @RequestMapping(method = RequestMethod.GET, value = "/add_to_cart_by_id")
+    public String addToCartById(Integer goodId, Integer userId){
+        User user = null;
+        for (User u: currentsUsers) {
+            if (u.getId() == userId) {
+                user = u;
+            }
+        }
+        if(user != null){
             String str = restTemplate.getForObject("http://localhost:8080/get_all_goods_string", String.class);
 
             List<Good> goods = new ArrayList<>();
@@ -59,35 +63,43 @@ public class CabinetController {
             }
 
             for (int i = 0; i < goods.size(); i++) {
-                if(goods.get(i).getId() ==id){
+                if(goods.get(i).getId() == goodId){
                     good = goods.get(i);
                 }
             }
-           // good = ;
-            currentUser.addToCart(good);
-
-            return "Good " + good.getName() + " add to cart of " + currentUser.getLogin();
+            user.addToCart(good);
+            currentsUsers.set(currentsUsers.indexOf(user), user);
+            return "Good " + good.getName() + " add to cart of " + user.getLogin();
         }
         return "Please, registration or log in";
     }
 
 
-    @RequestMapping(value = "/show_cart")
-    public List<Good> showCart(){
-        if(currentUser != null)
-            return currentUser.getCart();
-        else
-            return null;
+    @RequestMapping(method = RequestMethod.GET, value = "/show_cart")
+    public List<Good> showCart(Integer userId){
+        for (User u: currentsUsers) {
+            if (u.getId() == userId) {
+                return u.getCart();
+            }
+        }
+        return null;
     }
 
 
-    @RequestMapping(value = "/buy_good_id")
-    public String buyGoodInCart(Integer id){
-        if(currentUser != null) {
+    @RequestMapping(method = RequestMethod.GET, value = "/buy_good_id")
+    public String buyGoodInCart(Integer goodId, Integer userId){
+        User user = null;
+        for (User u: currentsUsers) {
+            if (u.getId() == userId) {
+               user = u;
+            }
+        }
+        if(user!= null) {
             try {
-                String name = currentUser.findById(id).getName();
-                if (currentUser.buyGoodById(id)) {
-                    return name + " successfully buy from cart of user " + currentUser.getLogin();
+                String name = user.findById(goodId).getName();
+                if (user.buyGoodById(goodId)) {
+                    currentsUsers.set(currentsUsers.indexOf(user), user);
+                    return name + " successfully buy from cart of user " + user.getLogin();
                 } else
                     return "Error buying. Good with this id not found";
             }
@@ -98,13 +110,20 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(value = "/delete_in_cart")
-    public String deleteGoodInCart(Integer id){
-        if(currentUser != null) {
+    @RequestMapping(method = RequestMethod.GET, value = "/delete_in_cart")
+    public String deleteGoodInCart(Integer goodId, Integer userId){
+        User user = null;
+        for (User u: currentsUsers) {
+            if (u.getId() == userId) {
+                user = u;
+            }
+        }
+        if(user!= null) {
             try{
-                String name = currentUser.findById(id).getName();
-                if(currentUser.deleteGoodById(id)) {
-                    return name + " successfully delete from cart of user " + currentUser.getLogin();
+                String name = user.findById(goodId).getName();
+                if(user.deleteGoodById(goodId)) {
+                    currentsUsers.set(currentsUsers.indexOf(user), user);
+                    return name + " successfully delete from cart of user " + user.getLogin();
                 }
                 else
                     return "Error deleting. Good with this id not found";
@@ -116,10 +135,17 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(value = "/exit_cabinet")
-    public String exitCabinet(){
-        currentUser = null;
+    @RequestMapping(method = RequestMethod.GET, value = "/exit_cabinet")
+    public String exitCabinet(Integer userId){
+        User user = null;
+        for (User u: currentsUsers) {
+            if (u.getId() == userId) {
+                user = u;
+            }
+        }
+        if(user != null){
+            currentsUsers.remove(user); //удалить пользователя из подключенных пользователей
+        }
         return "Good bye!";
     }
-
 }
