@@ -26,10 +26,23 @@ public class CabinetController {
         return currentsUsers;
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/add_current_user")
-    public String setUser(Integer id, String login, String password){
-        currentsUsers.add(new User(id, login, password));
-        return "Added user in current session. Login: " + login;
+    @RequestMapping(method = RequestMethod.POST, value = "/add_current_user")
+    public String addUser(Integer id, String login, String password){
+
+        User user = new User(id, login, password);
+        //проверяем, есть ли такой в БД
+        String str = restTemplate.postForObject("http://localhost:8083/get_all_users_string", user, String.class);
+        String[] infoOfUser = str.split("-");
+
+        for (int i = 0; i < infoOfUser.length; i++) {
+            String[] userStr = infoOfUser[i].split("&");
+
+            if(Integer.parseInt(userStr[0]) == id && userStr[1].equals(login) && userStr[2].equals(password)){
+                currentsUsers.add(new User(id, login, password));
+                return "Hello, " + login + " (Added user in current session)";
+            }
+        }
+        return "Wrong data, this user not found in base";
     }
 
     @RequestMapping(method = RequestMethod.GET, value = "/get_user_by_id")
