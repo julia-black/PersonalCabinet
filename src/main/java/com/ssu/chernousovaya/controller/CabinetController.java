@@ -5,6 +5,7 @@ import com.ssu.chernousovaya.model.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
@@ -21,17 +22,17 @@ public class CabinetController {
     RestTemplate restTemplate;
 
 
-    @RequestMapping(method = RequestMethod.GET, value = "/get_users")
+    @RequestMapping(method = RequestMethod.GET, value = "/users")
     public List<User> getCurrentUsers(){
         return currentsUsers;
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "/add_current_user")
+    @RequestMapping(method = RequestMethod.POST, value = "/users")
     public String addUser(Integer id, String login, String password){
 
         User user = new User(id, login, password);
         //проверяем, есть ли такой в БД
-        String str = restTemplate.postForObject("http://localhost:8083/get_all_users_string", user, String.class);
+        String str = restTemplate.postForObject("http://localhost:8083/users/string", user, String.class);
         String[] infoOfUser = str.split("-");
 
         for (int i = 0; i < infoOfUser.length; i++) {
@@ -45,8 +46,8 @@ public class CabinetController {
         return "Wrong data, this user not found in base";
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/get_user_by_id")
-    public User getUserById(Integer id) {
+    @RequestMapping(method = RequestMethod.GET, value = "/users", params = {"id"})
+    public User getUserById(@RequestParam Integer id) {
         for (User u: currentsUsers) {
                 if (u.getId() == id) {
                    return u;
@@ -55,7 +56,7 @@ public class CabinetController {
         return null;
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/add_to_cart_by_id")
+    @RequestMapping(method = RequestMethod.POST, value = "/users/cart")
     public String addToCartById(Integer goodId, Integer userId){
         User user = null;
         for (User u: currentsUsers) {
@@ -64,7 +65,7 @@ public class CabinetController {
             }
         }
         if(user != null){
-            String str = restTemplate.getForObject("http://localhost:8080/get_all_goods_string", String.class);
+            String str = restTemplate.getForObject("http://localhost:8080/goods/string", String.class);
 
             List<Good> goods = new ArrayList<>();
             String[] infoOfGood = str.split("-");
@@ -88,8 +89,8 @@ public class CabinetController {
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, value = "/show_cart")
-    public List<Good> showCart(Integer userId){
+    @RequestMapping(method = RequestMethod.GET, value = "/users/cart", params = {"userId"})
+    public List<Good> showCart(@RequestParam Integer userId){
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
                 return u.getCart();
@@ -99,8 +100,8 @@ public class CabinetController {
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, value = "/buy_good_id")
-    public String buyGoodInCart(Integer goodId, Integer userId){
+    @RequestMapping(method = RequestMethod.PUT, value = "/users/cart", params = {"goodId", "userId"})
+    public String buyGoodInCart(@RequestParam Integer goodId, @RequestParam Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
@@ -123,8 +124,8 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/delete_in_cart")
-    public String deleteGoodInCart(Integer goodId, Integer userId){
+    @RequestMapping(method = RequestMethod.DELETE, value = "/users/cart", params = {"goodId", "userId"})
+    public String deleteGoodInCart(@RequestParam Integer goodId, @RequestParam Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
@@ -148,7 +149,7 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/exit_cabinet")
+    @RequestMapping(method = RequestMethod.DELETE, value = "/users")
     public String exitCabinet(Integer userId){
         User user = null;
         for (User u: currentsUsers) {
