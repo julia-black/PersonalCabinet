@@ -15,7 +15,7 @@ import java.util.List;
 @RestController
 public class CabinetController {
 
-    @Autowired
+   @Autowired
     List<User> currentsUsers;
 
     @Autowired
@@ -46,18 +46,18 @@ public class CabinetController {
         return "Wrong data, this user not found in base";
     }
 
-    @RequestMapping(method = RequestMethod.GET, value = "/users", params = {"id"})
-    public User getUserById(@RequestParam Integer id) {
+    @RequestMapping(method = RequestMethod.GET, value = "/users/{id}")
+    public User getUserById(@PathVariable Integer id) {
         for (User u: currentsUsers) {
-                if (u.getId() == id) {
-                   return u;
-                }
+            if (u.getId() == id) {
+                return u;
+            }
         }
         return null;
     }
 
-    @RequestMapping(method = RequestMethod.POST, value = "/users/cart")
-    public String addToCartById(Integer goodId, Integer userId){
+    @RequestMapping(method = RequestMethod.POST, value = "/users/{userId}/cart/{goodId}")
+    public String addToCartById(@PathVariable Integer goodId, @PathVariable Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
@@ -89,8 +89,8 @@ public class CabinetController {
     }
 
 
-    @RequestMapping(method = RequestMethod.GET, value = "/users/cart", params = {"userId"})
-    public List<Good> showCart(@RequestParam Integer userId){
+    @RequestMapping(method = RequestMethod.GET, value = "/users/{userId}/cart")
+    public List<Good> showCart(@PathVariable Integer userId){
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
                 return u.getCart();
@@ -100,12 +100,12 @@ public class CabinetController {
     }
 
 
-    @RequestMapping(method = RequestMethod.PUT, value = "/users/cart", params = {"goodId", "userId"})
-    public String buyGoodInCart(@RequestParam Integer goodId, @RequestParam Integer userId){
+    @RequestMapping(method = RequestMethod.PUT, value = "/users/{userId}/cart/{goodId}")
+    public String buyGoodInCart(@PathVariable Integer goodId, @PathVariable Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
-               user = u;
+                user = u;
             }
         }
         if(user!= null) {
@@ -124,8 +124,8 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(method = RequestMethod.DELETE, value = "/users/cart", params = {"goodId", "userId"})
-    public String deleteGoodInCart(@RequestParam Integer goodId, @RequestParam Integer userId){
+    @RequestMapping(method = RequestMethod.DELETE, value = "/users/{userId}/cart/{goodId}")
+    public String deleteGoodInCart(@PathVariable Integer goodId, @PathVariable Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
@@ -149,8 +149,8 @@ public class CabinetController {
         return "Please, registration or log in";
     }
 
-    @RequestMapping(method = RequestMethod.DELETE, value = "/users")
-    public String exitCabinet(Integer userId){
+    @RequestMapping(method = RequestMethod.DELETE, value = "/users/{userId}")
+    public String exitCabinet(@PathVariable Integer userId){
         User user = null;
         for (User u: currentsUsers) {
             if (u.getId() == userId) {
